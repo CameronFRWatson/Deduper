@@ -1,0 +1,140 @@
+==============================================================================
+Cameron Watson | 18.10.2020 | Reference-based PCR duplicate removal psuedocode
+==============================================================================
+------------
+The problem
+------------
+
+PCR duplicates are a common issue with Illumina sequencing, since amplification is a necessary step
+in Illumina library preparation. These duplicates can cause problems in downstream processes and data analysis.
+For instance, having PCR duplicates present can lower the quality of a genome assembly by causing 
+convolutions in the DeBruijn graph. Additionally, PCR tends to differentially amplify DNA with different molecular properties.
+For these reasons, PCR duplicates should be removed from a set of reads; however, this can be computationally intensive
+if done during early steps of sequence data processing. It is far less computationally intensive to deal with PCR duplicates
+after alignment, when the data is in Sequence Alginment/Map (SAM) format. 
+
+SAM files contain a lot of information that make PCR duplicate removal possible:
+
+    • RNAME: contains chromosome number
+    • POS: contains the left-most starting position
+    • FLAG: contains information regarding mapping, strandedness, etc...
+    • CIGAR: contains information regarding soft-clipping of reads during alignment 
+    • QNAME: contains the UMI (Unique Molecular Index) for that read 
+      (not always, but assumed for this project)
+
+Example:
+
+QNAME          FLAG   RNAME     POS    MAPQ   CIGAR   RNEXT    PNEXT     TLEN    SEQ     QUAL    FEATURES 
+
+NS5...CTGTTCAC   0      2    76814284   36     71M      *        0         0    TCCACA   6AEEE    MD:Z:71
+
+-----------
+Psuedocode
+-----------
+
+## Inputs:
+
+    • a .sam file of single-end reads that have been sorted by chromosome and position (samtools sort)
+    • file containing known UMIs
+
+## Functions:
+
+def adjust_softclip(POS, CIGAR, Revcomp == False (Default)):
+    ```
+    This function checks if soft-clipping occurred, the side of the read that soft-clipping occurred on,
+    then adjusts the POS if necessary by subracting the number of bases
+    that were clipped.
+
+    If the read was reverse complemented (revcomp == True), adjusts POS by more CIGAR parameters
+
+    Example for forward read: adjust_softclip(12345, 14S92M2S) = 12345 - 14 = 12331 (adjusted_pos)
+
+    Example for reverse read: adjust_softclip(12345, 14S92M2N5M2S, Revcomp == True) = 12345 + 2 + 2 = 12349
+    ```
+    if forward read:
+
+        if softclipping occurred on the left side of the read: 
+
+            subtract the softclipped bases from POS
+
+    if reverse read:
+
+        parse CIGAR string into individual components 
+        add # of deletions, subtract # of insertions, 
+        add # of skips, add # of soft-clipped bases on the right side of the read 
+
+    return adjusted_pos
+
+
+## Main: 
+
+umi_dict = a dictionary of known UMIs with values initialized to an empty list 
+
+Loop through .sam file, for each line:
+
+    • If the line starts with "@", output to file to retain metadata
+
+    • extract UMI, FLAG, POS, RNAME, and CIGAR string and save as variables
+
+    • keep track of chromosome number (RNAME), when it changes, clear dictionary values
+
+    • check the bitwise flag for strandedness
+
+        if reverse complemented, set 'stranded' variable = 1 
+
+        else, stranded = 0
+
+    • Adjust the POS for soft-clipping with the adjust_softclip function
+
+        if rev_comp, specify in adjust_softclip function 
+
+    • concatenate a string (called criteria_string) of the following elements: stranded + rname + adjusted_pos
+
+        example: stranded = 0, rname = 2, adjusted_pos = 12345 --> 0212345
+
+    • check to see if the UMI is in the dictionary:
+
+        - if the UMI does not match any dictionary keys:
+
+            sequencing error! discard to error file 
+
+        - if the UMI matches a dictionary key:
+
+            if the dictionary value associated with that key is empty:
+            
+                assign criteria_string to be the dictionary value for that UMI 
+             
+                write the line out to output file
+            
+            else:
+
+                if criteria_string matches any dict value of the current UMI key:
+
+                    it's a PCR duplicate! output to duplicate file 
+
+                else (it's of the same molecule, but not a duplicate):
+
+                    append criteria_string to umi_dict value
+
+## Some notes and explanation
+
+Here's what the dictionary would look like:
+
+{
+AGACACTC : [criteria_string1, criteria_string2]
+AGAGGAGA : []
+AGCATCGT : [criteria_string3, criteria_string4, criteria_string5]
+AGCATGGA : []
+AGCTACCA : []
+...
+}
+
+^ This would get memory intensive if it continued aggregating all of the criteria strings,
+but these are purged when the chromosome number switches. This is why sorting by chromosome
+is necessary in the beginning. 
+
+The worst case scenario for memory would be if a chromosome had a lot of reads and none of them
+happened to be PCR duplicates. 
+
+~ there will eventually be an option for paired-end reads.
+
