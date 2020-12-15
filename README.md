@@ -25,3 +25,8 @@ watson_deduper.py can be called from the command-line with the following argumen
 --help          see full man page for input arguments
 ```
 
+watson_deduper.py will output a deduplicated SAM file, a PCR duplicates SAM file if keepDupes is specified,
+and a summary file containing information including the proportion of duplicate reads and information
+regarding UMI filtering and correction if UMI correction was specified.  
+
+Test files and example output files can be found in the test_files directory. 
