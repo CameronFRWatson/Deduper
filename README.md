@@ -14,9 +14,16 @@ watson_deduper.py can be called from the command-line with the following argumen
 ```
 --file          A SAM file that has been sorted by RNAME then POS to be deduplicated
 --umi           File containing UMIs, unset if randomers
---keepDupes     Specify to write duplicates out to separate sam file, otherwise duplicates are just removed
---correctUMI    Specify to error-correct UMIs that are one nucleotide away from a known UMI
---paired        Specify if input file contains paired-end reads. default is single-end (not yet implemented)
+--keepDupes     Specify to write duplicates out to separate sam file, 
+                otherwise duplicates are just removed
+--correctUMI    Specify to error-correct UMIs that are one nucleotide away from a known UMI; 
+                otherwise, reads with unknown UMIs are discarded. When specified, reads with 
+                UMIs that are more than one nucleotide away from a known UMI are discarded. 
+                Corrected UMIs will appear in the output sam file with an asterisc next to them. 
+                Randomers are not error-corrected, and specifying correctUMI without an umi 
+                file will result in error.
+--paired        Specify if input file contains paired-end reads. 
+                default is single-end (not yet implemented)
 --help          see full man page for input arguments
 ```
 
