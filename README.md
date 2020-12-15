@@ -22,8 +22,6 @@ watson_deduper.py can be called from the command-line with the following argumen
                 Corrected UMIs will appear in the output sam file with an asterisc next to them. 
                 Randomers are not error-corrected, and specifying correctUMI without an umi 
                 file will result in error.
---paired        Specify if input file contains paired-end reads. 
-                default is single-end (not yet implemented)
 --help          see full man page for input arguments
 ```
 
