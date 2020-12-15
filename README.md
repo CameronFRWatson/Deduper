@@ -7,7 +7,7 @@ in Illumina library preparation. These duplicates can cause problems in downstre
 For instance, having PCR duplicates present can lower the quality of a genome assembly by causing 
 convolutions in the DeBruijn graph. Additionally, PCR tends to differentially amplify DNA with different molecular properties. For these reasons, PCR duplicates should be removed from a set of reads; however, this can be computationally intensive if done during early steps of sequence data processing. It is far less computationally intensive to deal with PCR duplicates after alignment, when the data is in Sequence Alginment/Map (SAM) format. 
 **This repository contains watson_deduper.py, a tool for removing putative PCR duplicates from a sorted SAM file** 
-**of uniquely mapped reads.**
+**of uniquely mapped single-end reads.**
 
 watson_deduper.py can be called from the command-line with the following arguments:
 
@@ -27,6 +27,8 @@ watson_deduper.py can be called from the command-line with the following argumen
 
 watson_deduper.py will output a deduplicated SAM file, a PCR duplicates SAM file if keepDupes is specified,
 and a summary file containing information including the proportion of duplicate reads and information
-regarding UMI filtering and correction if UMI correction was specified.  
+regarding UMI filtering and correction if UMI correction was specified.
+
+Paired-end functionality to be added soon.
 
 Test files and example output files can be found in the test_files directory. 
